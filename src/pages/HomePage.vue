@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getCategories, getDashboardSummary, getFestivals, getRecentPosts, type Festival, type Place, type Post } from '../services/localhubApi'
+import { getCategories, getDashboardSummary, getFestivals, getRecentPosts } from '../services/localhubApi'
+import type { Festival, Place, Post } from '../types/api'
 
 const recentPosts = ref<Post[]>([])
 const places = ref<Place[]>([])
@@ -8,14 +9,14 @@ const festivals = ref<Festival[]>([])
 const stats = ref({ totalPosts: 0, totalPlaces: 0, totalFestivals: 0 })
 
 onMounted(async () => {
-  const [postList, placeList, festivalList, summary] = await Promise.all([
+  const [{ posts }, placeList, festivalList, summary] = await Promise.all([
     getRecentPosts(),
     getCategories({ filter: '전체', pageSize: 4 }),
     getFestivals(),
     getDashboardSummary(),
   ])
 
-  recentPosts.value = postList
+  recentPosts.value = posts
   places.value = placeList.items
   festivals.value = festivalList.slice(0, 3)
   stats.value = summary

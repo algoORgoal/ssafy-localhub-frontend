@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PasswordModal from '../components/PasswordModal.vue'
-import { deletePost, getPostById, incrementPostViews, togglePostLike, type Post } from '../services/localhubApi'
+import { deletePost, getPostById, incrementPostViews, togglePostLike } from '../services/localhubApi'
+import type { Post } from '../types/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -46,7 +47,6 @@ onMounted(load)
         <div class="toolbar" style="margin-top: 18px">
           <span class="badge">조회 {{ post.viewCount }}</span>
           <span class="badge">좋아요 {{ post.likeCount }}</span>
-          <span class="badge">{{ post.region }}</span>
         </div>
 
         <div class="article" style="margin-top: 22px">
@@ -60,20 +60,6 @@ onMounted(load)
           <RouterLink class="button-ghost" to="/posts">목록으로</RouterLink>
         </div>
       </article>
-
-      <aside class="side-panel">
-        <h3>상세 메타</h3>
-        <div class="detail-layout" style="grid-template-columns: 1fr; gap: 12px; margin-top: 16px">
-          <div class="stat-card">
-            <div class="muted">태그</div>
-            <p style="margin-top: 8px">{{ post.tags.join(', ') || '태그 없음' }}</p>
-          </div>
-          <div class="stat-card">
-            <div class="muted">권장 플로우</div>
-            <p style="margin-top: 8px">비밀번호 확인 후 수정하거나 삭제할 수 있습니다.</p>
-          </div>
-        </div>
-      </aside>
     </section>
 
     <PasswordModal

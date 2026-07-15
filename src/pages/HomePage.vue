@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { getCategories, getDashboardSummary, getFestivals, getRecentPosts } from '../services/localhubApi'
 import type { Festival, Place, Post } from '../types/api'
+import { Eye, Heart } from 'lucide-vue-next';
 
 const recentPosts = ref<Post[]>([])
 const places = ref<Place[]>([])
@@ -58,7 +59,16 @@ onMounted(async () => {
           <span class="card-tag">{{ post.category }}</span>
           <strong class="post-title">{{ post.title }}</strong>
           <p class="muted">{{ post.content }}</p>
-          <div class="meta">{{ post.author }} · 조회 {{ post.viewCount }} · 좋아요 {{ post.likeCount }}</div>
+          
+          <div class="meta" style="display: flex; align-items: center; gap: 12px;">
+            <span>{{ post.author }}</span>
+            <span style="display: flex; align-items: center; gap: 4px;">
+              <Eye :size="16" /> {{ post.viewCount }}
+            </span>
+            <span style="display: flex; align-items: center; gap: 4px;">
+              <Heart :size="16" /> {{ post.likeCount }}
+            </span>
+          </div>
         </RouterLink>
       </div>
     </section>

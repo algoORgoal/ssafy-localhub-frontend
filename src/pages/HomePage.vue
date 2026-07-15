@@ -18,7 +18,7 @@ onMounted(async () => {
   ])
 
   recentPosts.value = posts
-  places.value = placeList.items
+  places.value = placeList.places
   festivals.value = festivalList.slice(0, 3)
   stats.value = summary
 })

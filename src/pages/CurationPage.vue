@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import PlaceCard from '../components/PlaceCard.vue'
-import { getCategories, getPostCategories, type Place } from '../services/localhubApi'
+import { getCategories, getPostCategories } from '../services/localhubApi'
+import type { Place } from '../types/api'
 
 const props = defineProps<{ mode?: 'all' }>()
 const places = ref<Place[]>([])
@@ -12,7 +13,7 @@ const categories = getPostCategories()
 
 const load = async () => {
   const response = await getCategories({ filter: filter.value, page: page.value })
-  places.value = response.items
+  places.value = response.places
   totalPages.value = response.pages.totalPages
 }
 

@@ -1,36 +1,3 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-
-const routeLabel = computed(() => {
-  switch (route.name) {
-    case 'posts':
-      return '게시글 탐색'
-    case 'post-detail':
-      return '게시글 상세'
-    case 'post-create':
-      return '게시글 작성'
-    case 'post-edit':
-      return '게시글 수정'
-    case 'chat':
-      return '챗봇'
-    case 'curation':
-    case 'curation-all':
-      return '큐레이션'
-    case 'dashboard':
-      return '대시보드'
-    case 'festivals':
-      return '축제 캘린더'
-    case 'map':
-      return '지도'
-    default:
-      return '홈'
-  }
-})
-</script>
-
 <template>
   <div class="app-shell">
     <header class="shell-header">

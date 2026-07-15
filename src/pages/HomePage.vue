@@ -60,13 +60,16 @@ onMounted(async () => {
           <strong class="post-title">{{ post.title }}</strong>
           <p class="muted">{{ post.content }}</p>
           
-          <div class="meta" style="display: flex; align-items: center; gap: 12px;">
+          <div class="meta" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
             <span>{{ post.author }}</span>
-            <span style="display: flex; align-items: center; gap: 4px;">
-              <Eye :size="16" /> {{ post.viewCount }}
-            </span>
-            <span style="display: flex; align-items: center; gap: 4px;">
-              <Heart :size="16" /> {{ post.likeCount }}
+
+            <span style="display: flex; align-items: center; gap: 12px;">
+              <span style="display: flex; align-items: center; gap: 4px;">
+                <Eye :size="16" /> {{ post.viewCount }}
+              </span>
+              <span style="display: flex; align-items: center; gap: 4px;">
+                <Heart :size="16" /> {{ post.likeCount }}
+              </span>
             </span>
           </div>
         </RouterLink>

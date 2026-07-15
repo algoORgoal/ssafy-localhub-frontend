@@ -123,6 +123,11 @@ h2 { font-size: clamp(1.3rem, 2.2vw, 2rem); letter-spacing: -0.03em; }
 .button:hover { transform: translateY(-1px); }
 .button-secondary { background: var(--accent-soft); color: var(--accent-strong); }
 .button-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+.category-chip-active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  border-color: transparent;
+  color: #fff;
+}
 .button-danger { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
 .mini-panel { display: grid; gap: 14px; padding: 20px; background: rgba(255, 255, 255, 0.65); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.7); }
 .grid-2, .grid-3, .grid-4 { display: grid; gap: 16px; }

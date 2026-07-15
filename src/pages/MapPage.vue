@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, shallowRef } from 'vue'
-import { getCategories } from '../services/localhubApi'
+import { getCategories, getPostCategories } from '../services/localhubApi'
 import type { Place } from '../types/api'
 
 interface KakaoMapWindow extends Window {
@@ -49,6 +49,10 @@ const markerInstances = shallowRef<Array<{
   marker: { setMap: (map: unknown | null) => void; setImage: (image: unknown) => void }
 }>>([])
 const hoveredPlaceId = ref<number | string | null>(null)
+const currentFilter = ref('전체')
+const currentPage = ref(1)
+const totalPages = ref(1)
+const categories = getPostCategories()
 const mapError = ref('')
 
 const loadKakaoMap = () => new Promise<void>((resolve, reject) => {
@@ -182,6 +186,44 @@ const resetHoveredPlace = () => {
   })
 }
 
+const loadPlaces = async () => {
+  const response = await getCategories({
+    filter: currentFilter.value,
+    page: currentPage.value,
+  })
+
+  places.value = response.places
+  totalPages.value = Math.max(1, response.pages.total_pages || 1)
+
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = totalPages.value
+    await loadPlaces()
+  }
+}
+
+const setFilter = async (nextFilter: string) => {
+  currentFilter.value = nextFilter
+  currentPage.value = 1
+  await loadPlaces()
+
+  if (mapInstance.value) {
+    drawMarkers()
+  }
+}
+
+const goToPage = async (nextPage: number) => {
+  if (nextPage < 1 || nextPage > totalPages.value) {
+    return
+  }
+
+  currentPage.value = nextPage
+  await loadPlaces()
+
+  if (mapInstance.value) {
+    drawMarkers()
+  }
+}
+
 const drawMarkers = () => {
   const kakaoWindow = window as KakaoMapWindow
   const kakaoMaps = kakaoWindow.kakao?.maps
@@ -235,9 +277,7 @@ const drawMarkers = () => {
 
 onMounted(async () => {
   try {
-    const response = await getCategories({ filter: '전체', page: 1 })
-    places.value = response.places
-
+    await loadPlaces()
     await loadKakaoMap()
     initMap()
     drawMarkers()
@@ -262,6 +302,19 @@ onMounted(async () => {
         <div ref="mapContainer" class="map-canvas" aria-label="카카오 지도 영역"></div>
 
         <div class="map-legend">
+          <div class="filter-row">
+            <button
+              v-for="item in categories"
+              :key="item"
+              type="button"
+              class="button-ghost"
+              :class="{ 'category-chip-active': currentFilter === item }"
+              @click="setFilter(item)"
+            >
+              {{ item }}
+            </button>
+          </div>
+
           <article
             v-for="place in places"
             :key="place.id"
@@ -278,6 +331,21 @@ onMounted(async () => {
             </p>
           </article>
 
+          <div class="pagination-container">
+            <button class="pagination-arrow" :disabled="currentPage <= 1" @click="goToPage(Math.max(1, currentPage - 1))">
+              이전
+            </button>
+
+            <div class="pagination-numbers">
+              <span class="active">{{ currentPage }}</span>
+              <span class="muted">/ {{ totalPages }}</span>
+            </div>
+
+            <button class="pagination-arrow" :disabled="currentPage >= totalPages" @click="goToPage(Math.min(totalPages, currentPage + 1))">
+              다음
+            </button>
+          </div>
+
           <p v-if="mapError" class="muted">{{ mapError }}</p>
         </div>
       </div>
@@ -289,6 +357,31 @@ onMounted(async () => {
 .map-legend {
   display: grid;
   gap: 12px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pagination-arrow {
+  min-width: 64px;
+}
+
+.pagination-numbers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
 }
 
 .stat-card {

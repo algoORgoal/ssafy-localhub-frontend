@@ -43,7 +43,7 @@ onMounted(async () => {
               border-radius: 18px;
             "
           />
-          <span class="badge">{{ place.category_name_name }}</span>
+          <span class="badge">{{ place.category_name }}</span>
           <strong class="place-title">{{ place.title }}</strong>
           <p class="muted">{{ place.address }}</p>
         </article>

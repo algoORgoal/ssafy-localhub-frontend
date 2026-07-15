@@ -115,7 +115,7 @@ const title = computed(() =>
           :key="item"
           type="button"
           class="button-ghost"
-          :class="{ 'button-secondary': filter === item }"
+          :class="{ 'category-chip-active': filter === item }"
           @click="setFilter(item)"
         >
           {{ item }}

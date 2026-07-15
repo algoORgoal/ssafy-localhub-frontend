@@ -35,10 +35,10 @@ const routeLabel = computed(() => {
   <div class="app-shell">
     <header class="shell-header">
       <RouterLink to="/" class="brand">
-        <span class="brand-mark" aria-hidden="true" />
+        <img src="/brandlogo.png" width="64" height="64" aria-hidden="true" />
         <span>
-          <span class="brand-title">LocalHub</span>
-          <span class="brand-subtitle">지역 정보와 커뮤니티를 한 번에</span>
+          <span class="brand-title">로 컬 허 브</span>
+          <span class="brand-subtitle">서울의 지역 정보를 서로 공유해봐요.</span>
         </span>
       </RouterLink>
 
@@ -46,13 +46,8 @@ const routeLabel = computed(() => {
         <RouterLink class="nav-link" to="/">홈</RouterLink>
         <RouterLink class="nav-link" to="/posts">게시글</RouterLink>
         <RouterLink class="nav-link" to="/curation">큐레이션</RouterLink>
-        <RouterLink class="nav-link" to="/chat">챗봇</RouterLink>
-        <RouterLink class="nav-link" to="/dashboard">대시보드</RouterLink>
-        <RouterLink class="nav-link" to="/festivals">축제</RouterLink>
         <RouterLink class="nav-link" to="/map">지도</RouterLink>
       </nav>
-
-      <span class="shell-badge">{{ routeLabel }}</span>
     </header>
 
     <slot />

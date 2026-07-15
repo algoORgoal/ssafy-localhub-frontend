@@ -1,5 +1,7 @@
+@import 'pretendard/dist/web/static/pretendard.css';
+
 :root {
-  font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Pretendard', sans-serif;
   color: #1d1730;
   background:
     radial-gradient(circle at top left, rgba(62, 130, 255, 0.14), transparent 30%),

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PasswordModal from '../components/PasswordModal.vue'
 import { deletePost, getPostById, incrementPostViews, togglePostLike } from '../services/localhubApi'
 import type { Post } from '../types/api'
+import { Eye, Heart } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -78,23 +79,33 @@ onMounted(load)
         <h1 class="detail-title" style="margin-top: 12px">{{ post.title }}</h1>
         <p class="meta" style="margin-top: 10px">{{ post.author }} · {{ new Date(post.createdAt).toLocaleString('ko-KR') }}</p>
 
-        <div class="toolbar" style="margin-top: 18px; display: flex; gap: 12px; align-items: center;">
-          <span class="badge">조회 {{ post.viewCount }}</span>
-          
-          <button 
-            type="button" 
-            @click="handleLike" 
-            style="display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; color: inherit;"
+        <div class="toolbar" style="margin-top: 18px; display: flex; gap: 20px; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <Eye :size="18" />
+            <span>{{ post.viewCount }}</span>
+          </div>
+
+          <button
+            type="button"
+            @click="handleLike"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              background: none;
+              border: none;
+              cursor: pointer;
+              padding: 0;
+              color: inherit;
+            "
           >
-            <!-- 
-              Material Icons 사용: 
-              좋아요 상태(isLiked)에 따라 thumb_up (filled) 또는 thumb_up_off_alt (outlined) 사용 
-            -->
-            <span class="material-icons" :style="{ color: 'inherit', fontSize: '20px' }">
-              {{ isLiked ? 'thumb_up' : 'thumb_up_off_alt' }}
-            </span>
-            
-            <span class="badge" style="margin: 0;">{{ post.likeCount }}</span>
+            <Heart
+              :size="18"
+              :fill="isLiked ? 'currentColor' : 'none'"
+              :stroke-width="2"
+              :class="{ liked: isLiked }"
+            />
+            <span>{{ post.likeCount }}</span>
           </button>
         </div>
 

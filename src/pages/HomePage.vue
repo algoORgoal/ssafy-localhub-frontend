@@ -1,31 +1,20 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import PostCard from "../components/PostCard.vue";
-import {
-  getCategories,
-  getDashboardSummary,
-  getFestivals,
-  getRecentPosts,
-} from "../services/localhubApi";
-import type { Festival, Place, Post } from "../types/api";
+import { getCategories, getRecentPosts } from "../services/localhubApi";
+import type { Place, Post } from "../types/api";
 
 const recentPosts = ref<Post[]>([]);
 const places = ref<Place[]>([]);
-const festivals = ref<Festival[]>([]);
-const stats = ref({ totalPosts: 0, totalPlaces: 0, totalFestivals: 0 });
 
 onMounted(async () => {
-  const [posts, placeList, festivalList, summary] = await Promise.all([
+  const [posts, placeList] = await Promise.all([
     getRecentPosts(4),
     getCategories({ filter: "전체", pageSize: 4 }),
-    getFestivals(),
-    getDashboardSummary(),
   ]);
 
   recentPosts.value = posts;
   places.value = placeList.places;
-  festivals.value = festivalList.slice(0, 3);
-  stats.value = summary;
 });
 </script>
 
@@ -45,7 +34,7 @@ onMounted(async () => {
       <div class="grid-4" style="margin-top: 16px">
         <article v-for="place in places" :key="place.id" class="place-card">
           <img
-            :src="place.image"
+            :src="place.image_path"
             :alt="place.title"
             style="
               height: 150px;
@@ -54,7 +43,7 @@ onMounted(async () => {
               border-radius: 18px;
             "
           />
-          <span class="badge">{{ place.category }}</span>
+          <span class="badge">{{ place.category_name }}</span>
           <strong class="place-title">{{ place.title }}</strong>
           <p class="muted">{{ place.address }}</p>
         </article>
@@ -83,39 +72,6 @@ onMounted(async () => {
       >
         최근 게시물이 없습니다.
       </section>
-    </section>
-
-    <section class="surface">
-      <div class="section-head">
-        <div>
-          <h2>다가오는 축제</h2>
-          <p class="section-desc">
-            챗봇과 캘린더에 함께 쓰는 축제 데이터입니다.
-          </p>
-        </div>
-        <RouterLink class="button-ghost" to="/festivals"
-          >캘린더 보기</RouterLink
-        >
-      </div>
-
-      <div class="grid-3" style="margin-top: 16px">
-        <article
-          v-for="festival in festivals"
-          :key="festival.id"
-          class="stat-card"
-        >
-          <div class="badge">{{ festival.region }}</div>
-          <strong style="display: block; margin-top: 10px">{{
-            festival.title
-          }}</strong>
-          <p class="muted" style="margin-top: 8px">
-            {{ festival.date }} · {{ festival.location }}
-          </p>
-          <p style="margin-top: 10px; line-height: 1.6">
-            {{ festival.summary }}
-          </p>
-        </article>
-      </div>
     </section>
   </main>
 </template>

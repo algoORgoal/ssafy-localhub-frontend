@@ -48,8 +48,6 @@ const routeLabel = computed(() => {
         <RouterLink class="nav-link" to="/curation">큐레이션</RouterLink>
         <RouterLink class="nav-link" to="/map">지도</RouterLink>
       </nav>
-
-      <span class="shell-badge">{{ routeLabel }}</span>
     </header>
 
     <slot />

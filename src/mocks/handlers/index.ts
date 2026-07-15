@@ -37,11 +37,23 @@ export const handlers = [
   // ==========================================
   // 2. 최근 게시글 목록 조회
   // ==========================================
-  http.get('/api/v1/posts/recent', async () => {
+  http.get('/api/v1/posts/recent', async ({ request }) => {
     await delay(100)
-    return HttpResponse.json({
-      posts: clone(mockPosts.slice(0, 4)),
-    })
+    const url = new URL(request.url)
+    const limit = Math.min(20, Math.max(1, Number(url.searchParams.get('limit')) || 5))
+    const items = clone(mockPosts.slice(0, limit)).map((post) => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      image_path: null,
+      views: post.viewCount,
+      likes: post.likeCount,
+      created_at: post.created_at,
+      updated_at: post.created_at,
+      category_name: post.category_name,
+      author: post.author,
+    }))
+    return HttpResponse.json(items)
   }),
 
   // ==========================================
@@ -152,7 +164,7 @@ export const handlers = [
   // ==========================================
   // 8. 게시글 삭제
   // ==========================================
-  http.delete('/api/v1/posts/:id', async ({ request, params }) => {
+  http.delete('/api/v1/posts/:id', async ({ params }) => {
     await delay(100)
     const id = Number(params.id)
     const index = mockPosts.findIndex((item) => item.id === id)
@@ -234,7 +246,7 @@ export const handlers = [
   http.post('/api/v1/posts/:id/like', async ({ params, request }) => {
     await delay(60)
     const id = Number(params.id)
-    const body = (await request.json().catch(() => ({}))) as { amount?: number }
+    await request.json().catch(() => ({}))
     const post = mockPosts.find((item) => item.id === id)
     
     if (!post) return new HttpResponse(null, { status: 404 })

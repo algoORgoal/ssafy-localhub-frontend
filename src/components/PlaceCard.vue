@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Place } from '../services/localhubApi'
+import type { Place } from '../types/api'
 
 defineProps<{
   place: Place

@@ -33,7 +33,7 @@ export const handlers = [
     return HttpResponse.json({
       places: paginated.items,
       pages: paginated.pages,
-    });
+    })
   }),
 
   // ==========================================
@@ -65,25 +65,31 @@ export const handlers = [
   // 3. 게시글 목록 조회 및 탐색
   // ==========================================
   http.get("/api/v1/posts", async ({ request }) => {
-    await delay(100);
-    const url = new URL(request.url);
-    const category = url.searchParams.get("category")?.trim() ?? "";
-    const query = normalize(url.searchParams.get("query") ?? "");
-    const page = Number(url.searchParams.get("page")) || 1;
-    const pageSize = Number(url.searchParams.get("pageSize")) || 6;
+    await delay(100)
+    const url = new URL(request.url)
+    const category =
+      url.searchParams.get("category_name")?.trim() ||
+      url.searchParams.get("category")?.trim() ||
+      ""
+    const query = normalize(
+      url.searchParams.get("keyword") ?? url.searchParams.get("query") ?? ""
+    )
+    const page = Number(url.searchParams.get("page")) || 1
+    const pageSize =
+      Number(url.searchParams.get("page_size") ?? url.searchParams.get("pageSize")) || 6
 
     const filtered = mockPosts.filter((post) => {
       const categoryMatch =
-        !category || category === "전체" || post.category_name === category;
+        !category || category === "전체" || post.category_name === category
       const queryMatch =
         !query ||
-        [post.title, post.content, post.author, post.category_name].some(
-          (value) => normalize(String(value)).includes(query)
-        );
-      return categoryMatch && queryMatch;
-    });
+        [post.title, post.content, post.author, post.category_name].some((value) =>
+          normalize(String(value)).includes(query)
+        )
+      return categoryMatch && queryMatch
+    })
 
-    return HttpResponse.json(paginate(filtered, page, pageSize));
+    return HttpResponse.json(paginate(filtered, page, pageSize).postList)
   }),
 
   // ==========================================
@@ -257,8 +263,8 @@ export const handlers = [
         items: matched.map((p) => ({
           id: p.id,
           title: p.title,
-          type: p.category,
-          note: p.address,
+          type: p.category_name ?? '기타',
+          note: p.address ?? '',
         })),
       });
     }

@@ -6,8 +6,8 @@ import type { Place } from "../types/api";
 const places = ref<Place[]>([]);
 
 const toPinStyle = (place: Place) => {
-  const left = (place.mapx % 1) * 72 + 12;
-  const top = (place.mapy % 1) * 72 + 12;
+  const left = ((place.mapx ?? 0) % 1) * 72 + 12;
+  const top = ((place.mapy ?? 0) % 1) * 72 + 12;
   return {
     left: `${Math.min(80, Math.max(8, left))}%`,
     top: `${Math.min(80, Math.max(8, top))}%`,
@@ -15,8 +15,8 @@ const toPinStyle = (place: Place) => {
 };
 
 onMounted(async () => {
-  const response = await getCategories({ filter: "전체", pageSize: 6 });
-  places.value = response.places;
+  const response = await getCategories({ filter: "전체", page: 1 });
+  places.value = response.places.slice(0, 6);
 });
 </script>
 

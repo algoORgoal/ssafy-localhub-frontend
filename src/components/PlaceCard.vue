@@ -9,7 +9,7 @@ defineProps<{
 <template>
   <article class="place-card">
     <img
-      :src="place.image"
+      :src="place.image ?? ''"
       :alt="place.title"
       style="height: 180px; width: 100%; object-fit: cover; border-radius: 18px"
     />

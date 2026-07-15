@@ -1,30 +1,101 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PlaceCard from '../components/PlaceCard.vue'
 import { getCategories, getPostCategories } from '../services/localhubApi'
 import type { Place } from '../types/api'
 
 const props = defineProps<{ mode?: 'all' }>()
+
+const route = useRoute()
+const router = useRouter()
+
 const places = ref<Place[]>([])
-const filter = ref(props.mode === 'all' ? '전체' : '전체')
+const filter = ref('전체')
 const page = ref(1)
 const totalPages = ref(1)
 const categories = getPostCategories()
 
-const load = async () => {
-  const response = await getCategories({ filter: filter.value, page: page.value })
-  places.value = response.places
-  totalPages.value = response.pages.totalPages
+const parsePage = (value: unknown) => {
+  const parsed = Number(Array.isArray(value) ? value[0] : value)
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1
 }
 
-onMounted(load)
+const syncFromRoute = () => {
+  page.value = parsePage(route.query.page)
+  filter.value =
+    typeof route.query.filter === 'string' && route.query.filter
+      ? route.query.filter
+      : '전체'
+}
 
-watch(filter, async () => {
-  page.value = 1
-  await load()
-})
+const buildQuery = (next: { page?: number; filter?: string }) => {
+  const nextQuery: Record<string, string> = {}
+  const nextPage = next.page ?? page.value
+  const nextFilter = next.filter ?? filter.value
 
-const title = computed(() => (props.mode === 'all' ? '큐레이션 - 전체보기' : '큐레이션 - 카테고리 골라보기'))
+  if (nextPage > 1) nextQuery.page = String(nextPage)
+  if (nextFilter && nextFilter !== '전체') nextQuery.filter = nextFilter
+  return nextQuery
+}
+
+const sameQuery = (nextQuery: Record<string, string>) => {
+  const current = route.query
+  const keys = new Set([...Object.keys(nextQuery), ...Object.keys(current)])
+  for (const key of keys) {
+    const currentValue = current[key]
+    const nextValue = nextQuery[key]
+    if ((Array.isArray(currentValue) ? currentValue[0] : currentValue) !== (nextValue ?? undefined)) {
+      return false
+    }
+  }
+  return true
+}
+
+const updateRouteQuery = (next: { page?: number; filter?: string }) => {
+  const nextQuery = buildQuery(next)
+  if (sameQuery(nextQuery)) return
+  router.push({ query: nextQuery })
+}
+
+const load = async () => {
+  syncFromRoute()
+
+  const response = await getCategories({
+    filter: filter.value,
+    page: page.value,
+  })
+
+  places.value = response.places
+  totalPages.value = Math.max(1, response.pages.total_pages || 1)
+
+  if (page.value > totalPages.value) {
+    const nextQuery = buildQuery({ page: totalPages.value })
+    if (!sameQuery(nextQuery)) {
+      router.replace({ query: nextQuery })
+    }
+  }
+}
+
+const setFilter = (nextFilter: string) => {
+  updateRouteQuery({ page: 1, filter: nextFilter })
+}
+
+const goToPage = (nextPage: number) => {
+  updateRouteQuery({ page: nextPage })
+}
+
+watch(
+  () => route.query,
+  async () => {
+    await load()
+  },
+  { immediate: true, deep: true },
+)
+
+const title = computed(() =>
+  props.mode === 'all' ? '큐레이션 - 전체보기' : '큐레이션 - 카테고리 골라보기',
+)
 </script>
 
 <template>
@@ -39,7 +110,16 @@ const title = computed(() => (props.mode === 'all' ? '큐레이션 - 전체보�
       </div>
 
       <div class="filter-row" style="margin-top: 18px">
-        <button v-for="item in categories" :key="item" type="button" class="button-ghost" :class="{ 'button-secondary': filter === item }" @click="filter = item">{{ item }}</button>
+        <button
+          v-for="item in categories"
+          :key="item"
+          type="button"
+          class="button-ghost"
+          :class="{ 'button-secondary': filter === item }"
+          @click="setFilter(item)"
+        >
+          {{ item }}
+        </button>
       </div>
     </section>
 
@@ -50,7 +130,7 @@ const title = computed(() => (props.mode === 'all' ? '큐레이션 - 전체보�
     <section class="surface">
       <div class="pagination-container">
         <!-- 이전 버튼 -->
-        <button class="pagination-arrow" :disabled="page <= 1" @click="page = Math.max(1, page - 1); load()">
+        <button class="pagination-arrow" :disabled="page <= 1" @click="goToPage(Math.max(1, page - 1))">
           이전
         </button>
 
@@ -61,7 +141,7 @@ const title = computed(() => (props.mode === 'all' ? '큐레이션 - 전체보�
         </div>
 
         <!-- 다음 버튼 -->
-        <button class="pagination-arrow" :disabled="page >= totalPages" @click="page = Math.min(totalPages, page + 1); load()">
+        <button class="pagination-arrow" :disabled="page >= totalPages" @click="goToPage(Math.min(totalPages, page + 1))">
           다음
         </button>
       </div>

@@ -10,7 +10,7 @@ const places = ref<Place[]>([]);
 onMounted(async () => {
   const [posts, placeList] = await Promise.all([
     getRecentPosts(4),
-    getCategories({ filter: "전체", pageSize: 4 }),
+    getCategories({ filter: "전체", page: 1 }),
   ]);
 
   recentPosts.value = posts;
@@ -34,7 +34,7 @@ onMounted(async () => {
       <div class="grid-4" style="margin-top: 16px">
         <article v-for="place in places" :key="place.id" class="place-card">
           <img
-            :src="place.image"
+            :src="place.image ?? ''"
             :alt="place.title"
             style="
               height: 150px;

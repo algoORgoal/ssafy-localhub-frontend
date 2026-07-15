@@ -1,6 +1,3 @@
-// src/api/localhubApi.ts (또는 원하는 파일명)
-
-// src/api/localhubApi.ts (또는 원하는 파일명)
 import type {
   Post,
   PostInput,
@@ -10,19 +7,18 @@ import type {
   Festival,
   ChatResponse,
   DashboardSummary,
-} from '../types/api';
-import { postCategories } from '../types/api';
+} from '../types/api'
+import { postCategories } from '../types/api'
 
 const API_BASE = import.meta.env.VITE_API_URL
 
 // ==========================================
 // 1. 큐레이션 카테고리 데이터
 // ==========================================
-export async function getCategories(params: { filter?: string; page?: number; pageSize?: number }): Promise<PlaceListResponse> {
+export async function getCategories(params: { filter?: string; page?: number }): Promise<PlaceListResponse> {
   const urlParams = new URLSearchParams()
   if (params.filter && params.filter !== '전체') urlParams.append('filter', params.filter)
   if (params.page) urlParams.append('page', params.page.toString())
-  if (params.pageSize) urlParams.append('pageSize', params.pageSize.toString())
 
   const res = await fetch(`${API_BASE}/categories?${urlParams.toString()}`)
   if (!res.ok) throw new Error('카테고리 데이터를 불러오는데 실패했습니다.')
@@ -44,12 +40,19 @@ export async function getRecentPosts(limit = 5): Promise<PostListItem[]> {
 // ==========================================
 // 3. 게시글 목록 조회 및 탐색
 // ==========================================
-export async function getPosts(params: { category_name?: string; query?: string; page?: number; pageSize?: number }): Promise<PostListResponse> {
+export async function getPosts(params: {
+  category_name?: string
+  query?: string
+  page?: number
+  pageSize?: number
+}): Promise<PostListResponse> {
   const urlParams = new URLSearchParams()
-  if (params.category_name) urlParams.append('category_name', params.category_name)
-  if (params.query) urlParams.append('query', params.query)
+  if (params.category_name && params.category_name !== '전체') {
+    urlParams.append('category_name', params.category_name)
+  }
+  if (params.query) urlParams.append('keyword', params.query)
   if (params.page) urlParams.append('page', params.page.toString())
-  if (params.pageSize) urlParams.append('pageSize', params.pageSize.toString())
+  if (params.pageSize) urlParams.append('page_size', params.pageSize.toString())
 
   const res = await fetch(`${API_BASE}/posts?${urlParams.toString()}`)
   if (!res.ok) throw new Error('게시글 목록을 불러오는데 실패했습니다.')
@@ -111,7 +114,6 @@ export async function updatePost(id: number, input: Partial<PostInput>): Promise
 // 8. 게시글 삭제
 // ==========================================
 export async function deletePost(id: number, password: string): Promise<void> {
-  // 실제 API 명세에 따라 password를 body로 보낼지 header로 보낼지 조정이 필요할 수 있습니다.
   const res = await fetch(`${API_BASE}/posts/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -139,8 +141,6 @@ export async function chatRespond(text: string): Promise<ChatResponse> {
 // ==========================================
 export async function incrementPostViews(_id: number): Promise<void> {
   // TODO 나중에 추가
-  // const res = await fetch(`${API_BASE}/posts/${_id}/views`, { method: 'POST' })
-  // if (!res.ok) throw new Error('조회수 업데이트에 실패했습니다.')
 }
 
 // ==========================================
@@ -166,25 +166,24 @@ export async function getFestivals(): Promise<Festival[]> {
 }
 
 // ==========================================
-// 13. 대시보드 요약 정보 (별도 API가 없다면 기존 API들을 활용해 집계)
+// 13. 대시보드 요약 정보
 // ==========================================
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   try {
-    // 병렬로 필요한 데이터를 모두 요청합니다.
     const [postsRes, placesRes, festivalsRes] = await Promise.all([
-      getPosts({ pageSize: 100 }), // 카운트를 위해 충분히 큰 사이즈 혹은 별도 카운트 API 필요
-      getCategories({ pageSize: 1 }),
-      getFestivals()
+      getPosts({ pageSize: 100 }),
+      getCategories({ page: 1 }),
+      getFestivals(),
     ])
 
-    const totalPosts = postsRes.pages.total
-    const totalPlaces = placesRes.pages.total
+    const totalPosts = postsRes.total
+    const totalPlaces = placesRes.pages.total_items
     const totalFestivals = festivalsRes.length
 
-    // 임시로 상위 4개 카테고리 집계 (실제로는 백엔드에서 전용 API를 제공하는 것이 좋습니다)
     const categoryCounts: Record<string, number> = {}
-    postsRes.items.forEach(post => {
-      categoryCounts[post.category_name] = (categoryCounts[post.category_name] || 0) + 1
+    postsRes.items.forEach((post) => {
+      const name = post.category_name ?? '기타'
+      categoryCounts[name] = (categoryCounts[name] || 0) + 1
     })
 
     const topCategories = Object.entries(categoryCounts)
@@ -194,7 +193,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 
     return { totalPosts, totalPlaces, totalFestivals, topCategories }
   } catch (error) {
-    console.error("대시보드 요약 정보를 가져오지 못했습니다.", error)
+    console.error('대시보드 요약 정보를 가져오지 못했습니다.', error)
     return { totalPosts: 0, totalPlaces: 0, totalFestivals: 0, topCategories: [] }
   }
 }

@@ -11,7 +11,7 @@ export const postCategories = [
 
 export type PostCategory = (typeof postCategories)[number];
 
-/** Swagger `PostListItem` shape from `/api/v1/posts/recent` and list endpoints */
+/** Swagger `PostListItem` / `PostRead` shape */
 export interface PostListItem {
   id: number;
   title: string;
@@ -47,15 +47,15 @@ export interface PostInput {
 }
 
 export interface Place {
-  id: number;
-  category_name: PostCategory;
+  id: number | string;
+  category_name?: string | null;
   title: string;
-  address: string;
-  image: string;
-  mapx: number;
-  mapy: number;
-  region: string;
-  description: string;
+  address?: string | null;
+  image?: string | null;
+  mapx?: number | null;
+  mapy?: number | null;
+  region?: string;
+  description?: string;
 }
 
 export interface Festival {
@@ -67,21 +67,26 @@ export interface Festival {
   summary: string;
 }
 
-export interface PageResponse {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
+/** Swagger `PageInfoSchema` for categories */
+export interface PageInfo {
+  current_page: number;
+  total_pages: number;
+  total_items: number;
 }
 
+/** Swagger `/api/v1/posts` list response */
 export interface PostListResponse {
-  items: Post[];
-  pages: PageResponse;
+  items: PostListItem[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
 }
 
+/** Swagger `/api/v1/categories` response */
 export interface PlaceListResponse {
   places: Place[];
-  pages: PageResponse;
+  pages: PageInfo;
 }
 
 export interface ChatResponse {

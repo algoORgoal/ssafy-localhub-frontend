@@ -1,17 +1,68 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PostCard from '../components/PostCard.vue'
 import { getPostCategories, getPosts } from '../services/localhubApi'
-import type { Post } from '../types/api'
+import type { PostListItem } from '../types/api'
 
-const posts = ref<Post[]>([])
+const route = useRoute()
+const router = useRouter()
+
+const posts = ref<PostListItem[]>([])
 const categories = getPostCategories()
 const query = ref('')
 const category_name = ref('전체')
 const page = ref(1)
 const totalPages = ref(1)
 
+const parsePage = (value: unknown) => {
+  const parsed = Number(Array.isArray(value) ? value[0] : value)
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1
+}
+
+const syncFromRoute = () => {
+  page.value = parsePage(route.query.page)
+  query.value = typeof route.query.keyword === 'string' ? route.query.keyword : ''
+  category_name.value =
+    typeof route.query.category_name === 'string' && route.query.category_name
+      ? route.query.category_name
+      : '전체'
+}
+
+const buildQuery = (next: { page?: number; keyword?: string; category_name?: string }) => {
+  const nextQuery: Record<string, string> = {}
+  const nextPage = next.page ?? page.value
+  const nextKeyword = next.keyword ?? query.value
+  const nextCategory = next.category_name ?? category_name.value
+
+  if (nextPage > 1) nextQuery.page = String(nextPage)
+  if (nextKeyword.trim()) nextQuery.keyword = nextKeyword.trim()
+  if (nextCategory && nextCategory !== '전체') nextQuery.category_name = nextCategory
+  return nextQuery
+}
+
+const sameQuery = (nextQuery: Record<string, string>) => {
+  const current = route.query
+  const keys = new Set([...Object.keys(nextQuery), ...Object.keys(current)])
+  for (const key of keys) {
+    const currentValue = current[key]
+    const nextValue = nextQuery[key]
+    if ((Array.isArray(currentValue) ? currentValue[0] : currentValue) !== (nextValue ?? undefined)) {
+      return false
+    }
+  }
+  return true
+}
+
+const updateRouteQuery = (next: { page?: number; keyword?: string; category_name?: string }) => {
+  const nextQuery = buildQuery(next)
+  if (sameQuery(nextQuery)) return
+  router.push({ query: nextQuery })
+}
+
 const load = async () => {
+  syncFromRoute()
+
   const response = await getPosts({
     category_name: category_name.value,
     query: query.value,
@@ -20,15 +71,35 @@ const load = async () => {
   })
 
   posts.value = response.items
-  totalPages.value = response.pages.totalPages
+  totalPages.value = Math.max(1, response.total_pages || 1)
+
+  if (page.value > totalPages.value) {
+    const nextQuery = buildQuery({ page: totalPages.value })
+    if (!sameQuery(nextQuery)) {
+      router.replace({ query: nextQuery })
+    }
+  }
 }
 
 const submitSearch = async () => {
-  page.value = 1
-  await load()
+  updateRouteQuery({
+    page: 1,
+    keyword: query.value,
+    category_name: category_name.value,
+  })
 }
 
-onMounted(load)
+const goToPage = (nextPage: number) => {
+  updateRouteQuery({ page: nextPage })
+}
+
+watch(
+  () => route.query,
+  async () => {
+    await load()
+  },
+  { immediate: true, deep: true },
+)
 </script>
 
 <template>
@@ -62,7 +133,7 @@ onMounted(load)
     <section class="surface">
       <div class="pagination-container">
         <!-- 이전 버튼 -->
-        <button class="pagination-arrow" :disabled="page <= 1" @click="page = Math.max(1, page - 1); load()">
+        <button class="pagination-arrow" :disabled="page <= 1" @click="goToPage(Math.max(1, page - 1))">
           이전
         </button>
 
@@ -73,7 +144,7 @@ onMounted(load)
         </div>
 
         <!-- 다음 버튼 -->
-        <button class="pagination-arrow" :disabled="page >= totalPages" @click="page = Math.min(totalPages, page + 1); load()">
+        <button class="pagination-arrow" :disabled="page >= totalPages" @click="goToPage(Math.min(totalPages, page + 1))">
           다음
         </button>
       </div>

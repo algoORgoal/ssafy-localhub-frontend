@@ -1,18 +1,31 @@
-import type { Post, Place, Festival, PageResponse } from '../types/api'
+import type { Post, Place, Festival, PageInfo, PostListResponse } from '../types/api'
 
 // 헬퍼 함수들
 export const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 export const normalize = (value: string) => value.trim().toLowerCase()
 
-export const paginate = <T,>(items: T[], page = 1, pageSize = 6): { items: T[]; pages: PageResponse } => {
-  const safePage = Math.max(1, Math.floor(page)) // page가 string으로 넘어올 수 있으므로 안전하게 처리
+export const paginate = <T,>(items: T[], page = 1, pageSize = 6) => {
+  const safePage = Math.max(1, Math.floor(page))
   const total = items.length
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const totalPages = Math.max(1, Math.ceil(total / pageSize || 1))
   const start = (safePage - 1) * pageSize
+  const pageItems = items.slice(start, start + pageSize)
+
   return {
-    items: items.slice(start, start + pageSize),
-    pages: { page: safePage, pageSize, total, totalPages },
+    items: pageItems,
+    postList: {
+      items: pageItems,
+      page: safePage,
+      page_size: pageSize,
+      total,
+      total_pages: totalPages,
+    } satisfies Omit<PostListResponse, 'items'> & { items: T[] },
+    pages: {
+      current_page: safePage,
+      total_pages: totalPages,
+      total_items: total,
+    } satisfies PageInfo,
   }
 }
 
@@ -107,7 +120,7 @@ const createInitialPosts = (): Post[] => [
 const createInitialPlaces = (): Place[] => [
   {
     id: 1,
-    category: '관광지',
+    category_name: '관광지',
     title: '무등산국립공원',
     address: '광주 동구 용연동',
     image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&q=80',
@@ -118,7 +131,7 @@ const createInitialPlaces = (): Place[] => [
   },
   {
     id: 2,
-    category: '음식점',
+    category_name: '음식점',
     title: '전주 남부시장 맛집 골목',
     address: '전북 전주시 완산구',
     image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
@@ -129,7 +142,7 @@ const createInitialPlaces = (): Place[] => [
   },
   {
     id: 3,
-    category: '축제공연행사',
+    category_name: '축제공연행사',
     title: '서울 광장 야외공연장',
     address: '서울 중구 세종대로',
     image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=900&q=80',
@@ -140,7 +153,7 @@ const createInitialPlaces = (): Place[] => [
   },
   {
     id: 4,
-    category: '문화시설',
+    category_name: '문화시설',
     title: '대전 시립미술관',
     address: '대전 서구 둔산대로',
     image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=900&q=80',
@@ -151,7 +164,7 @@ const createInitialPlaces = (): Place[] => [
   },
   {
     id: 5,
-    category: '레포츠',
+    category_name: '레포츠',
     title: '부산 해운대 해변 러닝 코스',
     address: '부산 해운대구 우동',
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
@@ -162,7 +175,7 @@ const createInitialPlaces = (): Place[] => [
   },
   {
     id: 6,
-    category: '숙박',
+    category_name: '숙박',
     title: '경북 한옥 스테이',
     address: '경북 경주시 황남동',
     image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=900&q=80',

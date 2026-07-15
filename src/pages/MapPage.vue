@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, shallowRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getCategories, getPostCategories } from '../services/localhubApi'
 import type { Place } from '../types/api'
 
@@ -38,6 +39,9 @@ interface KakaoMapWindow extends Window {
   }
 }
 
+const route = useRoute()
+const router = useRouter()
+
 const places = ref<Place[]>([])
 const mapContainer = ref<HTMLElement | null>(null)
 const mapInstance = shallowRef<{
@@ -49,6 +53,7 @@ const markerInstances = shallowRef<Array<{
   marker: { setMap: (map: unknown | null) => void; setImage: (image: unknown) => void }
 }>>([])
 const hoveredPlaceId = ref<number | string | null>(null)
+const selectedPlaceId = ref<number | string | null>(null)
 const currentFilter = ref('전체')
 const currentPage = ref(1)
 const totalPages = ref(1)
@@ -125,6 +130,31 @@ const initMap = () => {
   })
 }
 
+const parsePage = (value: unknown) => {
+  const parsed = Number(Array.isArray(value) ? value[0] : value)
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1
+}
+
+const syncFromRoute = () => {
+  currentFilter.value = typeof route.query.filter === 'string' && route.query.filter
+    ? route.query.filter
+    : '전체'
+  currentPage.value = parsePage(route.query.page)
+  selectedPlaceId.value = typeof route.query.placeId === 'string' && route.query.placeId
+    ? route.query.placeId
+    : null
+}
+
+const updateRouteQuery = (next: { page?: number; filter?: string; placeId?: string | number | null }) => {
+  const nextQuery: Record<string, string> = {}
+
+  if (next.filter) nextQuery.filter = next.filter
+  if (next.page && next.page > 1) nextQuery.page = String(next.page)
+  if (next.placeId !== null && next.placeId !== undefined) nextQuery.placeId = String(next.placeId)
+
+  router.replace({ query: nextQuery })
+}
+
 const clearMarkers = () => {
   markerInstances.value.forEach(({ marker }) => {
     marker.setMap(null)
@@ -132,7 +162,7 @@ const clearMarkers = () => {
   markerInstances.value = []
 }
 
-const createHoveredMarkerImage = (kakaoMaps: KakaoMapWindow['kakao']['maps']) => {
+const createHoveredMarkerImage = (kakaoMaps: NonNullable<KakaoMapWindow['kakao']>['maps']) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
       <circle cx="16" cy="16" r="12" fill="#ff5c5c" stroke="#ffffff" stroke-width="3" />
@@ -147,9 +177,7 @@ const createHoveredMarkerImage = (kakaoMaps: KakaoMapWindow['kakao']['maps']) =>
   )
 }
 
-const setHoveredPlace = (placeId: number | string | null) => {
-  hoveredPlaceId.value = placeId
-
+const refreshMarkerHighlights = () => {
   const kakaoWindow = window as KakaoMapWindow
   const kakaoMaps = kakaoWindow.kakao?.maps
   if (!kakaoMaps || !markerInstances.value.length) {
@@ -163,30 +191,42 @@ const setHoveredPlace = (placeId: number | string | null) => {
   const activeImage = createHoveredMarkerImage(kakaoMaps)
 
   markerInstances.value.forEach(({ placeId: markerPlaceId, marker }) => {
-    const shouldHighlight = markerPlaceId === placeId
+    const shouldHighlight = markerPlaceId === hoveredPlaceId.value || markerPlaceId === selectedPlaceId.value
     marker.setImage(shouldHighlight ? activeImage : defaultImage)
   })
 }
 
+const setHoveredPlace = (placeId: number | string | null) => {
+  hoveredPlaceId.value = placeId
+  refreshMarkerHighlights()
+}
+
 const resetHoveredPlace = () => {
   hoveredPlaceId.value = null
+  refreshMarkerHighlights()
+}
+
+const selectPlace = (placeId: number | string) => {
+  selectedPlaceId.value = placeId
+  hoveredPlaceId.value = placeId
+  refreshMarkerHighlights()
+
   const kakaoWindow = window as KakaoMapWindow
   const kakaoMaps = kakaoWindow.kakao?.maps
-  if (!kakaoMaps || !markerInstances.value.length) {
+  const targetPlace = places.value.find((place) => String(place.id) === String(placeId))
+
+  if (!mapInstance.value || !kakaoMaps || !targetPlace?.mapy || !targetPlace?.mapx) {
     return
   }
 
-  const defaultImage = new kakaoMaps.MarkerImage(
-    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-    new kakaoMaps.Size(24, 35),
+  mapInstance.value.setCenter(
+    new kakaoMaps.LatLng(Number(targetPlace.mapy), Number(targetPlace.mapx)),
   )
-
-  markerInstances.value.forEach(({ marker }) => {
-    marker.setImage(defaultImage)
-  })
 }
 
 const loadPlaces = async () => {
+  syncFromRoute()
+
   const response = await getCategories({
     filter: currentFilter.value,
     page: currentPage.value,
@@ -194,6 +234,33 @@ const loadPlaces = async () => {
 
   places.value = response.places
   totalPages.value = Math.max(1, response.pages.total_pages || 1)
+
+  if (selectedPlaceId.value) {
+    const matchedInCurrentPage = places.value.find(
+      (place) => String(place.id) === String(selectedPlaceId.value),
+    )
+
+    if (!matchedInCurrentPage) {
+      for (let page = 1; page <= totalPages.value; page += 1) {
+        if (page === currentPage.value) continue
+
+        const pageResponse = await getCategories({
+          filter: currentFilter.value,
+          page,
+        })
+
+        const matchedPlace = pageResponse.places.find(
+          (place) => String(place.id) === String(selectedPlaceId.value),
+        )
+
+        if (matchedPlace) {
+          places.value = pageResponse.places
+          currentPage.value = page
+          break
+        }
+      }
+    }
+  }
 
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value
@@ -204,6 +271,8 @@ const loadPlaces = async () => {
 const setFilter = async (nextFilter: string) => {
   currentFilter.value = nextFilter
   currentPage.value = 1
+  selectedPlaceId.value = null
+  updateRouteQuery({ filter: currentFilter.value, page: 1, placeId: null })
   await loadPlaces()
 
   if (mapInstance.value) {
@@ -217,6 +286,7 @@ const goToPage = async (nextPage: number) => {
   }
 
   currentPage.value = nextPage
+  updateRouteQuery({ filter: currentFilter.value, page: currentPage.value, placeId: selectedPlaceId.value })
   await loadPlaces()
 
   if (mapInstance.value) {
@@ -271,8 +341,20 @@ const drawMarkers = () => {
     })
   })
 
+  const focusedPlace = validPlaces.find(
+    (place) => String(place.id) === String(selectedPlaceId.value),
+  )
+
   mapInstance.value.setBounds(bounds)
-  mapInstance.value.setCenter(firstPosition)
+  if (focusedPlace) {
+    mapInstance.value.setCenter(
+      new kakaoMaps.LatLng(Number(focusedPlace.mapy), Number(focusedPlace.mapx)),
+    )
+  } else {
+    mapInstance.value.setCenter(firstPosition)
+  }
+
+  refreshMarkerHighlights()
 }
 
 onMounted(async () => {
@@ -318,9 +400,10 @@ onMounted(async () => {
           <article
             v-for="place in places"
             :key="place.id"
-            :class="['stat-card', { active: hoveredPlaceId === place.id }]"
+            :class="['stat-card', { active: hoveredPlaceId === place.id || selectedPlaceId === place.id }]"
             @mouseenter="setHoveredPlace(place.id)"
             @mouseleave="resetHoveredPlace"
+            @click="selectPlace(place.id)"
           >
             <div class="badge">{{ place.category_name }}</div>
             <strong style="display: block; margin-top: 8px">{{

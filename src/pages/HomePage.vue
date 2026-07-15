@@ -26,9 +26,7 @@ onMounted(async () => {
           <h2>큐레이션</h2>
           <p class="section-desc">장소 카드와 카테고리별 탐색을 연결합니다.</p>
         </div>
-        <RouterLink class="button-ghost" to="/curation/all"
-          >전체 보기</RouterLink
-        >
+        <RouterLink class="button-ghost" to="/curation/all">더보기</RouterLink>
       </div>
 
       <div class="grid-4" style="margin-top: 16px">

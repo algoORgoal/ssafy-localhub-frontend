@@ -98,7 +98,7 @@ const submit = async () => {
 
         <div class="form-actions">
           <button class="button" :disabled="loading" type="submit">{{ loading ? '처리 중...' : isEdit ? '수정 완료' : '등록하기' }}</button>
-          <RouterLink class="button-ghost" to="/posts">취소</RouterLink>
+          <RouterLink class="button-ghost" :to="`/posts/${id}`">취소</RouterLink>
         </div>
       </form>
     </section>

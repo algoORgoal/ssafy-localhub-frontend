@@ -96,6 +96,18 @@ watch(
 const title = computed(() =>
   props.mode === 'all' ? '큐레이션 - 전체보기' : '큐레이션 - 카테고리 골라보기',
 )
+
+const goToMap = (place: Place) => {
+  const nextQuery: Record<string, string> = {
+    placeId: String(place.id),
+  }
+
+  if (place.category_name && place.category_name !== '전체') {
+    nextQuery.filter = place.category_name
+  }
+
+  router.push({ path: '/map', query: nextQuery })
+}
 </script>
 
 <template>
@@ -124,7 +136,9 @@ const title = computed(() =>
     </section>
 
     <section class="grid-2">
-      <PlaceCard v-for="place in places" :key="place.id" :place="place" />
+      <div v-for="place in places" :key="place.id" @click="goToMap(place)" style="cursor: pointer">
+        <PlaceCard :place="place" />
+      </div>
     </section>
 
     <section class="surface">

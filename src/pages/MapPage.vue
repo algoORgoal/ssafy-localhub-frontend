@@ -377,7 +377,6 @@ onMounted(async () => {
           <h2>지역 명소 지도 시각화</h2>
           <p class="section-desc">카카오 지도 SDK로 실제 지도 위에 장소 마커를 표시합니다.</p>
         </div>
-        <span class="status-pill">Kakao Map</span>
       </div>
 
       <div class="grid-2" style="margin-top: 18px">
@@ -397,22 +396,24 @@ onMounted(async () => {
             </button>
           </div>
 
-          <article
-            v-for="place in places"
-            :key="place.id"
-            :class="['stat-card', { active: hoveredPlaceId === place.id || selectedPlaceId === place.id }]"
-            @mouseenter="setHoveredPlace(place.id)"
-            @mouseleave="resetHoveredPlace"
-            @click="selectPlace(place.id)"
-          >
-            <div class="badge">{{ place.category_name }}</div>
-            <strong style="display: block; margin-top: 8px">{{
-              place.title
-            }}</strong>
-            <p class="muted" style="margin-top: 6px">
-              {{ place.region }} · {{ place.address }}
-            </p>
-          </article>
+          <div class="places-grid">
+            <article
+              v-for="place in places"
+              :key="place.id"
+              :class="['stat-card', { active: hoveredPlaceId === place.id || selectedPlaceId === place.id }]"
+              @mouseenter="setHoveredPlace(place.id)"
+              @mouseleave="resetHoveredPlace"
+              @click="selectPlace(place.id)"
+            >
+              <div class="badge">{{ place.category_name }}</div>
+              <strong style="display: block; margin-top: 4px">{{
+                place.title
+              }}</strong>
+              <p class="muted" style="margin-top: 3px">
+                {{ place.region }} · {{ place.address }}
+              </p>
+            </article>
+          </div>
 
           <div class="pagination-container">
             <button class="pagination-arrow" :disabled="currentPage <= 1" @click="goToPage(Math.max(1, currentPage - 1))">
@@ -439,12 +440,18 @@ onMounted(async () => {
 <style scoped>
 .map-legend {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .filter-row {
   display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.places-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
@@ -469,6 +476,8 @@ onMounted(async () => {
 
 .stat-card {
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  padding: 8px;
+  border-radius: 6px;
 }
 
 .stat-card.active {

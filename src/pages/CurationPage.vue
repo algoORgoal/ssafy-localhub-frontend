@@ -118,7 +118,6 @@ const goToMap = (place: Place) => {
           <h2>{{ title }}</h2>
           <p class="section-desc">장소 카드와 카테고리 필터로 지역 데이터를 탐색합니다.</p>
         </div>
-        <RouterLink class="button" to="/map">지도 보기</RouterLink>
       </div>
 
       <div class="filter-row" style="margin-top: 18px">

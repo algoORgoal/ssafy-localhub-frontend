@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import PostCard from "../components/PostCard.vue";
 import { getCategories, getRecentPosts } from "../services/localhubApi";
 import type { Place, PostListItem } from "../types/api";
@@ -7,10 +7,30 @@ import type { Place, PostListItem } from "../types/api";
 const recentPosts = ref<PostListItem[]>([]);
 const places = ref<Place[]>([]);
 
+// Fallback 이미지
+const fallbackImage = new URL("../assets/fallback.png", import.meta.url).href;
+
+// 각 장소마다 이미지 결정
+const placeWithImage = computed(() => {
+  return places.value.slice(0, 8).map((place) => ({
+    ...place,
+    displayImage: place.image && place.image.trim() 
+      ? place.image 
+      : fallbackImage,
+  }));
+});
+
 onMounted(async () => {
+  // 첫 페이지로 총 페이지 수 확인
+  const firstPageResponse = await getCategories({ filter: "전체", page: 1 });
+  const totalPages = firstPageResponse.pages.total_pages || 1;
+  
+  // 랜덤 페이지 생성 (1부터 totalPages까지)
+  const randomPage = Math.floor(Math.random() * totalPages) + 1;
+  
   const [posts, placeList] = await Promise.all([
-    getRecentPosts(4),
-    getCategories({ filter: "전체", page: 1 }),
+    getRecentPosts(8),
+    getCategories({ filter: "전체", page: randomPage }),
   ]);
 
   recentPosts.value = posts;
@@ -30,9 +50,9 @@ onMounted(async () => {
       </div>
 
       <div class="grid-4" style="margin-top: 16px">
-        <article v-for="place in places" :key="place.id" class="place-card">
+        <article v-for="place in placeWithImage" :key="place.id" class="place-card">
           <img
-            :src="place.image ?? ''"
+            :src="place.displayImage"
             :alt="place.title"
             style="
               height: 150px;
